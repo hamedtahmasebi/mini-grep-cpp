@@ -1,0 +1,36 @@
+Setup Development Environment on Windows
+
+Install MinGW (GCC for Windows) from mingw-w64.org. Download installer, select x86_64, posix, seh. Add bin folder to PATH.
+Install CMake from cmake.org if needed for builds.
+Use your code editor (e.g., VS Code) with terminal. Install C++ extension if using VS Code.
+Test: Open cmd, run g++ --version. Compile hello.cpp: g++ hello.cpp -o hello.exe, run ./hello.exe.
+
+Things to Know
+
+C++ basics: strings, vectors, file I/O (fstream), command-lineargs (argc/argv).
+String manipulation: find(), substr().
+Error handling: exceptions or return codes.
+Build process: Compile with g++ (g++ main.cpp -o minigrep.exe).
+Windows paths: Use forward slashes or escape backslashes.
+Standard libraries: <iostream>, <string>, <vector>, <fstream>, <cstring>.</cstring></fstream></vector></string></iostream>
+
+Things to Implement
+
+Parse command-line args: pattern and filename.
+Read file line by line.
+Search for pattern in each line (case-sensitive substring match).
+Print matching lines.
+Handle errors: file not found, invalid args.
+Optional: Case-insensitive search flag.
+
+Task List (Each 20-60 min)
+
+Setup env and write/test hello world in C++ (20 min).
+Create main.cpp, parse argc/argv for pattern and file (30 min).
+Implement file reading: Open file, read lines into vector<string> (30 min).</string>
+Add search function: Loop lines, use string::find() for matches (20 min).
+Print matching lines to cout (20 min).
+Add error handling: Check file open, arg count (30 min).
+Add case-insensitive option: Use flag, tolower() strings (40 min).
+Test with sample files, refine (30 min).
+Build final exe, run from cmd (20 min).
