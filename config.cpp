@@ -1,4 +1,3 @@
-#include "debug_logger.hpp"
 #include <set>
 #include <string>
 #include <sys/stat.h>
