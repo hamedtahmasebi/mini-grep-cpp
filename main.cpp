@@ -34,30 +34,32 @@ int main(int argc, char *argv[]) {
   DebugLogger::log("Streams count:", streams.size());
 
   string pattern = config_manager->get_pattern();
-  vector<string> content;
-  string line;
-
-  DebugLogger::log("Config done, start reading\n");
-  while (getline(*streams[0], line)) {
-    content.push_back(line);
+  if (config.case_insensitive) {
+    str_to_lower(&pattern);
   }
-  for (size_t i = 1; i <= content.size(); ++i) {
-    if (config.case_insensitive) {
-      str_to_lower(&pattern);
-    }
-    string line = content[i - 1];
+  for (auto &s : streams) {
+    vector<string> content;
+    string line;
 
-    if (config.case_insensitive) {
-      str_to_lower(&line);
+    DebugLogger::log("Config done, start reading\n");
+    while (getline(*s, line)) {
+      content.push_back(line);
     }
-    string::size_type pos = line.find(pattern);
-    if (pos == string::npos) {
-      continue;
+    for (size_t i = 1; i <= content.size(); ++i) {
+      string line = content[i - 1];
+
+      if (config.case_insensitive) {
+        str_to_lower(&line);
+      }
+      string::size_type pos = line.find(pattern);
+      if (pos == string::npos) {
+        continue;
+      }
+      if (config.show_line_numbers) {
+        printf("%zu: ", i);
+      }
+      printf("%s\n", line.c_str());
     }
-    if (config.show_line_numbers) {
-      printf("%zu: ", i);
-    }
-    printf("%s\n", &content[i][0]);
   }
 }
 
