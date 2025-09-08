@@ -41,7 +41,6 @@ Run the application from the command line with the following syntax:
 - **Multiple Files**: Supports searching multiple files in one command.
 
 ## Limitations
-- Only the first input stream is processed in the current implementation.
 - Error handling for invalid files or patterns is not fully implemented.
 - Application is in development; expect updates and improvements.
 
