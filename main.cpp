@@ -2,12 +2,15 @@
 #include <cctype>
 #include <cstddef>
 #include <cstdio>
-#include <fstream>
 #include <iostream>
+#include <istream>
+#include <memory>
 #include <string>
 #include <vector>
 
+#include "config.cpp"
 #include "debug_logger.hpp"
+#include "input.cpp"
 
 using namespace std;
 
@@ -20,31 +23,31 @@ args_config read_args(int argc, char *argv[]);
 void str_to_lower(string *str);
 
 int main(int argc, char *argv[]) {
-  char *file_path = argv[1];
-  string pattern = argv[2];
+  DebugLogger::log("Start the App\n");
+  Config::ConfigManager *config_manager = new Config::ConfigManager(argc, argv);
+  Config::Config config = config_manager->get_config();
+  Input::InputManager *input_mngr = new Input::InputManager();
 
-  args_config config = read_args(argc, argv);
-  DebugLogger::log("Searching for ", pattern, " in ", file_path, "\n");
+  vector<string> *file_paths = config_manager->get_file_pathes();
+  vector<unique_ptr<istream>> streams =
+      input_mngr->get_input_streams(file_paths);
+  DebugLogger::log("Streams count:", streams.size());
 
-  ifstream input_file(file_path);
-
-  if (!input_file.is_open()) {
-    cerr << "Error while trying to open the file" << endl;
-    return 1;
-  }
-
+  string pattern = config_manager->get_pattern();
   vector<string> content;
   string line;
-  while (getline(input_file, line)) {
+
+  DebugLogger::log("Config done, start reading\n");
+  while (getline(*streams[0], line)) {
     content.push_back(line);
   }
   for (size_t i = 1; i <= content.size(); ++i) {
-    if (config.case_insensetive) {
+    if (config.case_insensitive) {
       str_to_lower(&pattern);
     }
     string line = content[i - 1];
 
-    if (config.case_insensetive) {
+    if (config.case_insensitive) {
       str_to_lower(&line);
     }
     string::size_type pos = line.find(pattern);
@@ -56,8 +59,6 @@ int main(int argc, char *argv[]) {
     }
     printf("%s\n", &content[i][0]);
   }
-
-  input_file.close();
 }
 
 args_config read_args(int argc, char *argv[]) {
