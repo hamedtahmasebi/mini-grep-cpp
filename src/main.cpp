@@ -8,9 +8,9 @@
 #include <string>
 #include <vector>
 
-#include "config.cpp"
-#include "debug_logger.hpp"
-#include "input.cpp"
+#include "../include/config.hpp"
+#include "../include/debug_logger.hpp"
+#include "../include/input.hpp"
 
 using namespace std;
 
