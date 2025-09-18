@@ -7,7 +7,7 @@ OBJECTS = $(patsubst $(SRC_DIR)/%.cpp,$(OUT_DIR)/%.o,$(SOURCES))
 DEBUG_TARGET = main_debug.exe
 PROD_TARGET = main.exe
 
-all: $(PROD_TARGET) $(DEBUG_TARGET)
+all: $(OUT_DIR)/$(PROD_TARGET) $(OUT_DIR)/$(DEBUG_TARGET)
 
 compile_prod: $(OUT_DIR)/$(PROD_TARGET)
 $(OUT_DIR)/$(PROD_TARGET): $(OBJECTS)
