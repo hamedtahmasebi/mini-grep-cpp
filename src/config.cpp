@@ -12,9 +12,11 @@ const set<string> known_flags = {
     "--ignore-case",
     "-n", // show line numbers
     "--line-number",
-};
+    "-c", // suppres normal output & show count of matching lines
+    "--count"};
 
-ConfigManager::ConfigManager(int argc, char *argv[]) {
+ConfigManager::ConfigManager(int argc, char *argv[])
+    : _regex_flags(regex_constants::ECMAScript) {
   vector<string> args(argv, argv + argc);
   this->_pattern = args[1];
   for (size_t i = 2; i < args.size(); ++i) {
@@ -27,6 +29,11 @@ ConfigManager::ConfigManager(int argc, char *argv[]) {
 
       if (args[i] == "-n" || args[i] == "--line-number") {
         this->_config.show_line_numbers = true;
+        continue;
+      }
+
+      if (args[i] == "-c" || args[i] == "--count") {
+        this->_config.count_mode = true;
         continue;
       }
 
@@ -46,8 +53,4 @@ regex_constants::syntax_option_type ConfigManager::get_enabled_regex_flags() {
 
 vector<string> *ConfigManager::get_file_pathes() { return &this->_files; }
 
-Config _config;
-string _pattern;
-regex_constants::syntax_option_type _regex_flags = regex_constants::ECMAScript;
-vector<string> _files;
 }; // namespace Config
