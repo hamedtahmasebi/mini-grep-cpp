@@ -1,6 +1,5 @@
 #include <cctype>
 #include <cstddef>
-#include <cstdio>
 #include <iostream>
 #include <istream>
 #include <memory>
@@ -10,6 +9,7 @@
 
 #include "../include/config.hpp"
 #include "../include/debug_logger.hpp"
+#include "../include/finder.hpp"
 #include "../include/input.hpp"
 #include "../include/output.hpp"
 
@@ -22,15 +22,14 @@ typedef struct args_config {
 
 int main(int argc, char *argv[]) {
   DebugLogger::log("Start the App\n");
-  Config::ConfigManager *config_manager = new Config::ConfigManager(argc, argv);
+  auto config_manager = std::make_unique<Config::ConfigManager>(argc, argv);
   Config::Config config = config_manager->get_config();
-  Input::InputManager *input_mngr = new Input::InputManager();
-  Output::OutputStrategy *output_strategy =
-      new Output::ConsoleOutput(Output::OutputConfig{
-          .mode = config.count_mode ? Output::OutputMode::Count
-                                    : Output::OutputMode::Normal
+  auto input_mngr = make_unique<Input::InputManager>();
+  auto output_strategy =
+      std::make_unique<Output::ConsoleOutput>(Output::OutputConfig{});
 
-      });
+  Finder::FinderConfig finder_config = {.mode = Finder::Mode::Normal};
+  auto regex_finder = std::make_unique<Finder::RegexFinder>(finder_config);
 
   vector<string> *file_paths = config_manager->get_file_pathes();
   vector<unique_ptr<istream>> streams =
@@ -39,31 +38,21 @@ int main(int argc, char *argv[]) {
 
   string pattern = config_manager->get_pattern();
   DebugLogger::log("Pattern:", pattern);
+
+  std::regex regex_ptrn(pattern, config_manager->get_enabled_regex_flags());
+
   for (auto &s : streams) {
-    vector<string> content;
-    string line;
+    vector<Finder::FinderResult> find_res =
+        regex_finder->find_in_stream(*s, regex_ptrn);
 
-    DebugLogger::log("Config done, start reading\n");
-    while (getline(*s, line)) {
-      content.push_back(line);
-    }
-    regex_constants::syntax_option_type flags =
-        config_manager->get_enabled_regex_flags();
-
-    for (size_t i = 1; i <= content.size(); ++i) {
-      string line = content[i - 1];
-      regex re(pattern, flags);
-      smatch result;
-      regex_search(line, result, re);
-      if (result.empty()) {
-        continue;
+    if (config.count_mode == true) {
+      output_strategy->write(to_string(find_res.size()));
+    } else {
+      for (auto fr : find_res) {
+        output_strategy->write(to_string(fr.line_number));
+        output_strategy->write(": ");
+        output_strategy->write(fr.line);
       }
-      if (config.show_line_numbers) {
-        // TODO: output constraints should be handled better. preferably in
-        // OutputStrategy
-        output_strategy->write_line(to_string(i) + ": " + content[i - 1]);
-      }
-      output_strategy->write_line(content[i - 1]);
     }
   }
 }

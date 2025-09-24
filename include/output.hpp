@@ -2,14 +2,8 @@
 #include <string>
 
 namespace Output {
-enum class OutputMode {
-  Normal,
-  Count,
-};
 
-struct OutputConfig {
-  OutputMode mode;
-};
+struct OutputConfig {};
 
 class OutputStrategy {
 public:

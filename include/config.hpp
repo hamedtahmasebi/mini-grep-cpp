@@ -5,9 +5,9 @@
 namespace Config {
 
 struct Config {
-  bool case_insensitive;
-  bool show_line_numbers;
-  bool count_mode;
+  bool case_insensitive = false;
+  bool show_line_numbers = true;
+  bool count_mode = false;
   std::vector<std::string> files;
 };
 
