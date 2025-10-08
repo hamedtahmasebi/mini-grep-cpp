@@ -38,12 +38,17 @@ int main(int argc, char *argv[]) {
 
   for (const auto &inp : inputs) {
     const auto find_res = regex_finder->find_in_stream(*inp.stream, regex_ptrn);
-    if (inputs.size() > 1 && !find_res.empty()) {
-      output_strategy->write_line(inp.name);
-    }
+    const bool should_show_filename = inputs.size() > 1 && !find_res.empty();
     if (config.count_mode == true) {
-      output_strategy->write(to_string(find_res.size()));
+      if (should_show_filename) {
+        output_strategy->write(inp.name + ": ");
+      }
+      output_strategy->write_line(to_string(find_res.size()));
     } else {
+
+      if (should_show_filename) {
+        output_strategy->write_line(inp.name);
+      }
       for (auto fr : find_res) {
         output_strategy->write(to_string(fr.line_number));
         output_strategy->write(": ");
