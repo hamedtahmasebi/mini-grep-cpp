@@ -2,104 +2,159 @@
 
 **Note**: This application and its documentation are in progress and subject to change.
 
+---
 
+# mini-grep-cpp
 
-# User Guide: Text Search Utility
+A simple command-line text search utility (grep clone) in C++.
+Searches for lines matching a pattern (regular expression) in files or stdin. Supports recursion, counting, and options.
 
-## 1. Overview
+---
 
-This is a command-line tool that allows you to search for text patterns (using regular expressions) within files. It can search in a single file, multiple files, or recursively through directories. You can also pipe text directly into the program for searching.
+## Table of Contents
 
-The tool is similar in function to the standard `grep` utility on Linux systems.
+* Features
+* Build
+* Usage
 
-## 2. Installation
+  * Syntax
+  * Options
+* Design / Architecture
 
-To use this program, you first need to compile the source code. A typical command using g++ would be:
+  * Modules / Components
+* Examples
+* Limitations & Notes
 
-```bash
-g++ main.cpp config.cpp finder.cpp input.cpp output.cpp -o search_tool -std=c++17
-```
+---
 
-After compiling, you will have an executable file named `search_tool` (or whatever you chose to name it).
+## Features
 
-## 3. Basic Syntax
+* Accepts a regex pattern as required argument
+* Reads from files, directories (non-recursively or recursively), or stdin
+* Option to ignore case
+* Option to include line numbers
+* Option to count matches instead of printing lines
+* Skips binary-like files
 
-The basic command structure is:
+---
 
-```bash
-./search_tool <pattern> [options] [files_or_directories...]
-```
+## Build
 
-- **`<pattern>`**: The regular expression you want to search for. This is the first argument after the program name and is required.
-- **`[options]`**: Optional flags that change the behavior of the search (see section 4).
-- **`[files_or_directories...]`**: A list of one or more files or directories to search in. If you provide a directory, the program will search within the files located directly in that directory.
+Requires a C++17-capable compiler.
 
-## 4. Command-Line Options
-
-The following options can be used to control the search:
-
-| Short Flag | Long Flag        | Description                                                                 |
-| :--------- | :--------------- | :-------------------------------------------------------------------------- |
-| `-i`       | `--ignore-case`  | Makes the search case-insensitive. Matches "Error", "error", and "ERROR".    |
-| `-n`       | `--line-number`  | Prefixes each line of output with its line number in the source file.       |
-| `-c`       | `--count`        | Suppresses normal output and instead prints a count of matching lines for each file processed. |
-| `-r`       | `--recursive`    | Searches recursively through all subdirectories when a directory is provided as input. |
-
-## 5. Usage Examples
-
-Here are some practical examples of how to use the search tool.
-
-### Example 1: Basic Search in a Single File
-Search for the word "function" in `main.cpp`.
+From repo root:
 
 ```bash
-./search_tool "function" main.cpp
+make
 ```
 
-### Example 2: Case-Insensitive Search
-Search for "error" in a log file, regardless of case.
+This builds the binary (e.g. `mini-grep` or as defined in Makefile).
+
+Alternatively compile manually:
 
 ```bash
-./search_tool -i "error" application.log
+g++ -std=c++17 src/*.cpp -I include -o mini-grep
 ```
 
-### Example 3: Show Line Numbers
-Find all lines containing "TODO" in the `src` directory and show their line numbers.
+---
 
-```bash
-./search_tool -n "TODO" src/
+## Usage
+
+### Syntax
+
+```
+mini-grep [OPTIONS] <pattern> [FILES_OR_DIRS...]
 ```
 
-### Example 4: Count Matching Lines
-Count the number of lines that contain `#include` in all `.cpp` files in the current directory.
+* `pattern` (required): a regular expression (ECMAScript / std::regex)
+* `FILES_OR_DIRS...`: zero or more paths. If none, reads from stdin
 
-```bash
-./search_tool -c "#include" *.cpp
-```
+### Options
 
-### Example 5: Recursive Search
-Search for the class name `ConfigManager` in all files within the `src` directory and its subdirectories.
+| Flag | Long            | Effect                                                              |
+| ---- | --------------- | ------------------------------------------------------------------- |
+| `-i` | `--ignore-case` | Case-insensitive matching                                           |
+| `-n` | `--line-number` | Prefix output with line number                                      |
+| `-c` | `--count`       | Instead of printing matching lines, print count per file (or total) |
+| `-r` | `--recursive`   | If encountering a directory, search inside it recursively           |
 
-```bash
-./search_tool -r "ConfigManager" src/
-```
+---
 
-### Example 6: Combining Options
-Search for the pattern `user_id` (case-insensitively) in all files under the `logs` directory, showing the line number for each match.
+## Design / Architecture
 
-```bash
-./search_tool -i -n "user_id" logs/
-```
+The code is organized into modules (likely under `src/` and headers in `include/`):
 
-### Example 7: Searching Piped Input
-You can pipe data from another command directly into the search tool. This example finds all lines containing "INFO" in the output of a system log command.
+* **main / driver**: parses command-line arguments, dispatches search
+* **Config / Options module**: holds user options (pattern, flags, input paths)
+* **Finder / Search module**: traverses paths, handles directories, applies recursion
+* **Input / File reading**: reads lines from files or stdin
+* **Output module**: formats matched lines or counts, includes filename/linenumber
+* **Utility / Helpers**: e.g. skip binary files, apply case folding, regex wrapper
 
-```bash
-cat /var/log/system.log | ./search_tool "INFO"
-```
+Flow:
 
-## 6. Important Notes
+1. Parse options & pattern
+2. For each path (or stdin):
+   a. If directory and `-r` is set, recursively enumerate contained files
+   b. For each file: open, read line by line
+   c. For each line: test regex match (with case-insensitive option adjusted)
+   d. If match: either increment count or emit formatted line
+3. After processing each file (or all input), if `-c`, output counts
 
-- **Binary Files**: The program automatically attempts to skip binary files (like images, executables, compressed archives, etc.) to avoid displaying meaningless output. It determines if a file is binary by checking if it is mostly text.
-- **Multiple File Output**: When searching multiple files, the program will print the filename as a header before showing the matches from that specific file.
-- **No Input**: If no files are specified and no data is piped in, the program will run but produce no output.
+Binary skipping: file contents are heuristically inspected; if not predominantly text, skip to avoid meaningless output.
+
+When multiple files are searched, the output of each matching line is prefixed by its filename (unless reading from single file or stdin).
+
+---
+
+## Examples
+
+* Search `error` in `log.txt` (case-sensitive):
+
+  ```sh
+  mini-grep "error" log.txt
+  ```
+
+* Case-insensitive:
+
+  ```sh
+  mini-grep -i "error" log.txt
+  ```
+
+* With line numbers:
+
+  ```sh
+  mini-grep -n "TODO" src/
+  ```
+
+* Recursive search in directory:
+
+  ```sh
+  mini-grep -r "ConfigManager" src/
+  ```
+
+* Count matches in each file:
+
+  ```sh
+  mini-grep -c "pattern" *.cpp
+  ```
+
+* Read from piped stdin:
+
+  ```sh
+  cat file.txt | mini-grep "someRegex"
+  ```
+
+---
+
+## Limitations & Notes
+
+* The regex flavor is that of `std::regex` (ECMAScript by default).
+* Performance is limited for very large inputs (single-threaded).
+* Binary-detection heuristic may skip files incorrectly (false negatives).
+* Directory traversal does not follow symbolic links (unless code explicitly handles it).
+* No support for context lines (before/after), inverse matching, color highlighting, etc.
+
+---
+
+If you want, I can also generate a Doxygen-style reference or embed this as `docs/USAGE.md`. Would you like that?
