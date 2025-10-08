@@ -1,5 +1,7 @@
 CXX = clang++
 CXXFLAGS = -Wall -Wextra -std=c++20 -I./include
+DEBUG_FLAGS = -g -O0 -DDEBUG
+PROD_FLAGS  = -O2
 OUT_DIR = ./out
 SRC_DIR = ./src
 SOURCES = $(wildcard $(SRC_DIR)/*.cpp)
@@ -11,19 +13,18 @@ all: $(OUT_DIR)/$(PROD_TARGET) $(OUT_DIR)/$(DEBUG_TARGET)
 
 compile_prod: $(OUT_DIR)/$(PROD_TARGET)
 $(OUT_DIR)/$(PROD_TARGET): $(OBJECTS)
-	$(CXX) $^ -o $@
+	$(CXX) $(PROD_FLAGS) $^ -o $@
 
 $(OUT_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OUT_DIR)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
-
+	$(CXX) $(CXXFLAGS) $(PROD_FLAGS) -c $< -o $@
 
 
 compile_debug: $(OUT_DIR)/$(DEBUG_TARGET)
 $(OUT_DIR)/$(DEBUG_TARGET): $(OBJECTS:.o=_debug.o)
-	$(CXX) $^ -o $@
+	$(CXX) $(DEBUG_FLAGS) $^ -o $@
 
 $(OUT_DIR)/%_debug.o: $(SRC_DIR)/%.cpp | $(OUT_DIR)
-	$(CXX) $(CXXFLAGS) -DDEBUG -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(DEBUG_FLAGS) -c $< -o $@
 
 
 clean:

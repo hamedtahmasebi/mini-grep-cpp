@@ -1,17 +1,26 @@
 #pragma once
 
+#include <filesystem>
 #include <istream>
 #include <memory>
-#include <string>
 #include <vector>
 namespace Input {
+
+enum class InputType { FILE, STDIN };
+
+struct InputObject {
+  std::string name;
+  InputType type;
+  std::shared_ptr<std::istream> stream;
+};
+
 class InputManager {
 public:
   InputManager();
   ~InputManager();
 
-  std::vector<std::unique_ptr<std::istream>>
-  get_input_streams(std::vector<std::string> *files);
+  std::vector<InputObject>
+  get_input_streams(std::vector<std::filesystem::path> &files);
 
 private:
   bool is_stdin_piped;

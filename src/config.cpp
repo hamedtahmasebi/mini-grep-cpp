@@ -1,11 +1,23 @@
 #include "../include/config.hpp"
+#include <cctype>
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
+#include <ios>
 #include <regex>
 #include <set>
 #include <string>
 #include <sys/stat.h>
+#include <unordered_set>
 using namespace std;
 
 namespace Config {
+
+bool is_text_file(std::filesystem::path path);
+
+const std::unordered_set<string> binary_extensions = {
+    ".exe", ".dll", ".mp3", ".mp4", ".so",  ".bin",
+    ".png", ".gif", ".zip", ".pdf", ".tar", ".gz"};
 
 const set<string> known_flags = {
     "-i", // ignore case
@@ -13,7 +25,9 @@ const set<string> known_flags = {
     "-n", // show line numbers
     "--line-number",
     "-c", // suppres normal output & show count of matching lines
-    "--count"};
+    "--count",
+    "-r", // Recursively go through files
+    "--recursive"};
 
 ConfigManager::ConfigManager(int argc, char *argv[])
     : _regex_flags(regex_constants::ECMAScript) {
@@ -37,9 +51,23 @@ ConfigManager::ConfigManager(int argc, char *argv[])
         continue;
       }
 
+      if (args[i] == "-r" || args[i] == "--recursive") {
+        this->_config.recursive = true;
+      };
+
       continue;
     }
-    _files.push_back(args[i]);
+
+    std::filesystem::path path = args[i];
+    if (path.has_extension() &&
+        binary_extensions.contains(path.extension().string()))
+      continue;
+
+    if (std::filesystem::is_directory(path)) {
+      this->read_dir_recursive(path, this->_files);
+    } else {
+      _files.push_back(args[i]);
+    }
   }
 }
 
@@ -51,6 +79,43 @@ regex_constants::syntax_option_type ConfigManager::get_enabled_regex_flags() {
   return this->_regex_flags;
 }
 
-vector<string> *ConfigManager::get_file_pathes() { return &this->_files; }
+vector<std::filesystem::path> *ConfigManager::get_file_pathes() {
+  return &this->_files;
+}
+
+void ConfigManager::read_dir_recursive(
+    std::filesystem::path dir, std::vector<std::filesystem::path> &target) {
+
+  for (auto &entry : std::filesystem::directory_iterator(dir)) {
+    if (entry.is_directory()) {
+      read_dir_recursive(entry, target);
+    } else {
+      if (is_text_file(entry)) {
+        target.push_back(entry);
+      }
+    }
+  }
+}
+
+bool is_text_file(std::filesystem::path path) {
+  std::ifstream file(path, std::ios::binary);
+  if (!file)
+    return false;
+  char buff[8192];
+  file.read(buff, sizeof(buff));
+  std::streamsize n = file.gcount();
+  int printable_chars = 0;
+  for (std::streamsize i = 0; i < n; ++i) {
+    unsigned char c = buff[i];
+    if (c == 0)
+      return false; // This is a null byte
+    if (isprint(c) || isspace(c)) {
+      printable_chars++;
+    };
+  }
+  double ratio = static_cast<double>(printable_chars) / n;
+  return ratio > 0.8; // If printable characters are more than 80% it's most
+                      // probably a text file
+}
 
 }; // namespace Config
